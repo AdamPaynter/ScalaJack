@@ -23,7 +23,7 @@ object ISOTime extends ValueClassCustom {
 	  case (jk:JsonKind,iso:DateTime) => '"'+ISODateTimeFormat.dateTime().withZoneUTC().print(iso)+'"'
 	}
 }
-class ISOTime( val dt:DateTime ) extends AnyVal
+case class ISOTime( val dt:DateTime ) extends AnyVal
 
 object CCNum extends ValueClassCustom {
 	def read:PartialFunction[(KindMarker,_), Any] = {
@@ -33,10 +33,10 @@ object CCNum extends ValueClassCustom {
 	  case (jk:JsonKind,s:String) => '"'+s.grouped(4).toList.mkString("-")+'"'
 	}
 }
-class CCNum( val s:String ) extends AnyVal
+case class CCNum( val s:String ) extends AnyVal
 case class TestTime( period:ISOTime, cc:CCNum, num:Numa )
 
-class Numa( val s:String ) extends AnyVal
+case class Numa( val s:String ) extends AnyVal
 
 // Overriding a primitive requires assigning it to a new type, so as to differentiate it from 
 // the vanilla flavor of the primitive.
