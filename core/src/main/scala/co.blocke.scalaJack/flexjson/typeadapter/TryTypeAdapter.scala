@@ -8,7 +8,7 @@ import scala.util.Try
 object TryTypeAdapter extends TypeAdapterFactory {
 
   override def apply(tpe: Type, context: Context) =
-    if (tpe <:< typeOf[Try[Any]]) {
+    if (tpe <:< typeOf[Try[_]]) {
       val valueType = tpe.typeArgs.head
       val valueTypeAdapter = context.adapter(valueType)
       Some(new TryTypeAdapter[Any](valueTypeAdapter.asInstanceOf[TypeAdapter[Any]]))

@@ -1,6 +1,6 @@
 package co.blocke.scalajack.flexjson.typeadapter
 
-import co.blocke.scalajack.flexjson.{Context, JsonReader, TokenType, TypeAdapter, TypeAdapterFactory, JsonWriter}
+import co.blocke.scalajack.flexjson.{Context, JsonReader, JsonWriter, NothingJsonReader, TokenType, TypeAdapter, TypeAdapterFactory}
 
 import scala.reflect.runtime.currentMirror
 import scala.reflect.runtime.universe.{MethodMirror, Type}
@@ -10,6 +10,9 @@ object CaseClassTypeAdapter extends TypeAdapterFactory {
   override def apply(tpe: Type, context: Context) = {
     val classSymbol = tpe.typeSymbol.asClass
     if (classSymbol.isCaseClass) {
+
+      tpe.typeArgs
+      tpe.typeParams
 
       println(s"$classSymbol is a case class")
       //            val instance: Any = currentMirror.reflectClass(classSymbol).reflectConstructor(classSymbol.primaryConstructor.asMethod).apply("a", "b", "c")
@@ -21,7 +24,7 @@ object CaseClassTypeAdapter extends TypeAdapterFactory {
 
       val parameters: List[(String, TypeAdapter[_])] = primaryConstructor.paramLists flatMap { parameterList ⇒
         parameterList map { parameter ⇒
-          (parameter.name.decodedName.toString, context.adapter(parameter.infoIn(tpe)))
+          (parameter.name.decodedName.toString, context.adapter(parameter.infoIn(tpe).substituteTypes(tpe.typeConstructor.typeParams, tpe.typeArgs)))
         }
       }
       println(s"Parameters: $parameters")
@@ -35,7 +38,7 @@ object CaseClassTypeAdapter extends TypeAdapterFactory {
 }
 
 case class CaseClassTypeAdapter(constructorMirror: MethodMirror,
-                           parameters: List[(String, TypeAdapter[_])]) extends TypeAdapter[Any] {
+                                parameters: List[(String, TypeAdapter[_])]) extends TypeAdapter[Any] {
 
   override def read(reader: JsonReader): Any = {
     reader.nextTokenType match {
@@ -44,18 +47,32 @@ case class CaseClassTypeAdapter(constructorMirror: MethodMirror,
 
         val parameterValues = parameters map {
           case (name, valueTypeAdapter) ⇒
-            var value: AnyRef = null
+            var value: Any = null
+
+            println(s"TRYING TO FIND A VALUE FOR PARAMETER $name...")
+
+            var foundMember = false
 
             reader.markPosition()
-            while (reader.hasMoreMembers) {
+            while (reader.hasMoreMembers && !foundMember) {
               val memberName = reader.nextString()
+              println(s"Encountered $memberName")
               if (memberName == name) {
                 value = valueTypeAdapter.read(reader).asInstanceOf[AnyRef]
+                foundMember = true
               } else {
                 reader.skipNextValue()
               }
             }
+
+            if (!foundMember) {
+              value = valueTypeAdapter.read(NothingJsonReader)
+            }
+
             reader.resetPosition()
+
+            println(s"Parameter $name value: $value")
+            println()
 
             value
         }

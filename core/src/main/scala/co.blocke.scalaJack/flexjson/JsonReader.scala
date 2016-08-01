@@ -1,61 +1,39 @@
 package co.blocke.scalajack.flexjson
 
-class JsonReader(table: TokenTable) {
+import TokenType.TokenType
 
-  private var position = -1
-  private var markedPosition: Int = -1
+trait JsonReader {
 
-  def nextTokenType: TokenType.Value = {
-    table.tokenTypes(position + 1)
-  }
+  def nextTokenType: TokenType
 
-  def moveNext(): TokenType.Value = {
-    position += 1
-    table.tokenTypes(position)
-  }
+  def moveNext(): TokenType
 
-  def nextString(): String = {
-    moveNext()
-    if (table.tokenTypes(position) != TokenType.String) {
-      throw new AssertionError(s"Expected a String token, not a ${table.tokenTypes(position)} token")
-    }
-    table.tokenStrings(position)
-  }
+  def nextString(): String
 
-  def hasMoreMembers: Boolean =
-    nextTokenType != TokenType.EndObject
+  def hasMoreMembers: Boolean
 
-  def beginObject(): Unit = {
-    moveNext()
-    assert(table.tokenTypes(position) == TokenType.BeginObject)
-  }
+  def beginObject(): Unit
 
-  def endObject(): Unit = {
-    moveNext()
-    assert(table.tokenTypes(position) == TokenType.EndObject)
-  }
+  def endObject(): Unit
 
-  def skipNextValue(): Unit = {
-    // FIXME this is utterly incorrect. The next value may be complex and require multiple calls to [[moveNext]].
-    moveNext()
-  }
+  def hasMoreElements: Boolean
 
-  def markPosition(): Unit = {
-    markedPosition = position
-  }
+  def beginArray(): Unit
 
-  def resetPosition(): Unit = {
-    position = markedPosition
-  }
+  def endArray(): Unit
 
-  def unmarkPosition(): Unit = {
-    markedPosition = -1
-  }
+  def skipNextValue(): Unit
 
-  def tokenSource: Array[Char] = table.tokenSources(position)
+  def markPosition(): Unit
 
-  def tokenOffset: Int = table.tokenOffsets(position)
+  def resetPosition(): Unit
 
-  def tokenLength: Int = table.tokenLengths(position)
+  def unmarkPosition(): Unit
+
+  def tokenSource: Array[Char]
+
+  def tokenOffset: Int
+
+  def tokenLength: Int
 
 }

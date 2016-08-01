@@ -226,15 +226,15 @@ class SimpleTestSpec extends FunSpec with GivenWhenThen with BeforeAndAfterAll {
 				val js3 = """{"hey":"foo","you":1}"""
 				val js4 = """{"hey":true,"you":9}"""
 				val js5 = """["a","b","c"]"""
-				(sjJS.read[Wrapper](js1) == a1) should be( true )
+				sjJS.read[Wrapper](js1) should be( a1 )
 				// (sjJS.read[Wrapper2[Int]](js2) == a2) should be( true )  <-- Can't parse "7"
-				(sjJS.read[Wrapped](js3) == a3) should be( true )
-				(sjJS.read[Wrapped2[Int]](js4) == a4) should be( true )
+				sjJS.read[Wrapped](js3) should be( a3 )
+				sjJS.read[Wrapped2[Int]](js4) should be( a4 )
 			}
 			it("Must read unicode") {
 				val js = "{\"me\":\"nast\\u0119puj\\u0105cych\"}"
 				val a = WithType("następujących")
-				(sjJS.read[WithType[String]](js) == a) should be( true )
+				sjJS.read[WithType[String]](js) should be( a )
 			}
 			it("Must handle a case class with default values - defaults specified") {
 				val wd = WithDefaults("Greg",49,Some(5),Some(false),GrumpyPet(Cat("Fluffy"),"fish"))

@@ -16,7 +16,7 @@ class Context {
     adapter(typeTag.tpe).asInstanceOf[TypeAdapter[T]]
 
   def adapter(tpe: Type): TypeAdapter[_] = {
-    val map: Option[TypeAdapter[_]] = adapters.find(_._1 =:= tpe).map(pair => pair._2.asInstanceOf[TypeAdapter[_]])
+    val map: Option[TypeAdapter[_]] = adapters.find(_._1 =:= tpe).map(pair ⇒ pair._2.asInstanceOf[TypeAdapter[_]])
 
     map.getOrElse({
       var optionalAdapter: Option[TypeAdapter[_]] = None

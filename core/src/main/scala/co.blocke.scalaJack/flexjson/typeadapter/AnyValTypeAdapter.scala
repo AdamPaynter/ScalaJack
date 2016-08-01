@@ -13,7 +13,7 @@ object AnyValTypeAdapter extends TypeAdapterFactory {
       println(s"$classSymbol is a value class")
       val primaryConstructor = classSymbol.primaryConstructor.asMethod
 
-      val parameterType = primaryConstructor.paramLists.head.head.infoIn(tpe)
+      val parameterType = primaryConstructor.paramLists.head.head.infoIn(tpe).substituteTypes(tpe.typeConstructor.typeParams, tpe.typeArgs)
       val parameterTypeAdapter = context.adapter(parameterType)
 
       println(s"parameter type adapter: $parameterTypeAdapter")

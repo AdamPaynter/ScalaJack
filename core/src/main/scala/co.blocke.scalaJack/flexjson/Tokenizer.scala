@@ -47,7 +47,7 @@ class Tokenizer(handler: TokenHandler) {
           handler.onValueSeparator(source, position, 1)
           position += 1
 
-        case letter if isLetter(letter) =>
+        case letter if isLetter(letter) ⇒
           val startOfIdentifier = position
           position += 1
 
@@ -59,7 +59,7 @@ class Tokenizer(handler: TokenHandler) {
 
           handler.onIdentifier(source, startOfIdentifier, lengthOfIdentifier)
 
-        case digit if isDigit(digit) =>
+        case digit if isDigit(digit) || digit == '.' || digit == '-' ⇒
           val startOfNumber = position
           position += 1
 
@@ -76,14 +76,33 @@ class Tokenizer(handler: TokenHandler) {
           position += 1
 
           val startOfString = position
+          var startOfUnescapedCharacters = position
 
           var readingString = true
           while (readingString && position < maxPosition) {
             source(position) match {
-              case '"' ⇒
-                val endOfString = position
+              case '\\' =>
+                // Escaped character
+                if (position > startOfUnescapedCharacters) {
+                  handler.onUnescapedCharacters(source, startOfUnescapedCharacters, position - startOfUnescapedCharacters)
+                }
 
-                handler.onUnescapedCharacters(source, startOfString, endOfString - startOfString)
+                if (source(position + 1) == 'u') {
+                  // four-digit unicode
+                  handler.onEscapedCharacter(source, position, 6) // FIXME actually verify that the four characters are, in fact, digits
+                  position += 6
+                  startOfUnescapedCharacters = position
+                } else {
+                  handler.onEscapedCharacter(source, position, 2)
+                  position += 2
+                  startOfUnescapedCharacters = position
+                }
+
+              case '"' ⇒
+                if (position > startOfUnescapedCharacters) {
+                  handler.onUnescapedCharacters(source, startOfUnescapedCharacters, position - startOfUnescapedCharacters)
+                }
+
                 handler.onEndString(source, position, 1)
                 position += 1
 
