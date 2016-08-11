@@ -21,9 +21,14 @@ object TryTypeAdapter extends TypeAdapterFactory {
 class TryTypeAdapter[T](valueTypeAdapter: TypeAdapter[T]) extends TypeAdapter[Try[T]] {
 
   override def read(reader: JsonReader): Try[T] = {
-    reader.markPosition()
+    val originalPosition = reader.position
 
     val triedValue = Try { valueTypeAdapter.read(reader) }
+
+    if (triedValue.isFailure) {
+      reader.position = originalPosition
+      reader.skipNextValue()
+    }
 
     triedValue
   }

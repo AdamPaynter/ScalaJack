@@ -75,13 +75,12 @@ class Tokenizer(handler: TokenHandler) {
           handler.onBeginString(source, position, 1)
           position += 1
 
-          val startOfString = position
           var startOfUnescapedCharacters = position
 
           var readingString = true
           while (readingString && position < maxPosition) {
             source(position) match {
-              case '\\' =>
+              case '\\' ⇒
                 // Escaped character
                 if (position > startOfUnescapedCharacters) {
                   handler.onUnescapedCharacters(source, startOfUnescapedCharacters, position - startOfUnescapedCharacters)

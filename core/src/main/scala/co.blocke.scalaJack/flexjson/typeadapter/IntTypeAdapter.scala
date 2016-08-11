@@ -1,19 +1,10 @@
 package co.blocke.scalajack.flexjson.typeadapter
 
-import co.blocke.scalajack.flexjson.{Context, JsonReader, JsonWriter, TokenType, TypeAdapter, TypeAdapterFactory}
+import co.blocke.scalajack.flexjson.{JsonReader, JsonWriter, TokenType}
 
-import scala.reflect.runtime.universe.{Type, typeOf}
-
-object IntTypeAdapter extends TypeAdapter[Int] with TypeAdapterFactory {
+object IntTypeAdapter extends SimpleTypeAdapter[Int] {
 
   override def toString = "IntTypeAdapter"
-
-  override def apply(tpe: Type, context: Context) =
-    if (tpe =:= typeOf[Int]) {
-      Some(this)
-    } else {
-      None
-    }
 
   override def read(reader: JsonReader): Int = {
     reader.moveNext() match {

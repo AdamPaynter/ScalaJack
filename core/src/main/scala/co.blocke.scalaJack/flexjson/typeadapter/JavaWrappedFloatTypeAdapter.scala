@@ -1,17 +1,8 @@
 package co.blocke.scalajack.flexjson.typeadapter
 
-import co.blocke.scalajack.flexjson.{Context, JsonReader, JsonWriter, TokenType, TypeAdapter, TypeAdapterFactory}
+import co.blocke.scalajack.flexjson.{JsonReader, JsonWriter, TokenType}
 
-import scala.reflect.runtime.universe.{Type, typeOf}
-
-object JavaFloatTypeAdapter extends TypeAdapter[java.lang.Float] with TypeAdapterFactory {
-
-  override def apply(tpe: Type, context: Context) =
-    if (tpe =:= typeOf[java.lang.Float]) {
-      Some(this)
-    } else {
-      None
-    }
+object JavaWrappedFloatTypeAdapter extends SimpleTypeAdapter[java.lang.Float] {
 
   override def read(reader: JsonReader): java.lang.Float = {
     reader.moveNext() match {

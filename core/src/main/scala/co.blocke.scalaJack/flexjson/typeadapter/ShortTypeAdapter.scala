@@ -1,19 +1,10 @@
 package co.blocke.scalajack.flexjson.typeadapter
 
-import co.blocke.scalajack.flexjson.{Context, JsonReader, JsonWriter, TokenType, TypeAdapter, TypeAdapterFactory}
+import co.blocke.scalajack.flexjson.{JsonReader, JsonWriter, TokenType}
 
-import scala.reflect.runtime.universe.{Type, typeOf}
-
-object ShortTypeAdapter extends TypeAdapter[Short] with TypeAdapterFactory {
+object ShortTypeAdapter extends SimpleTypeAdapter[Short] {
 
   override def toString = "ShortTypeAdapter"
-
-  override def apply(tpe: Type, context: Context) =
-    if (tpe =:= typeOf[Short]) {
-      Some(this)
-    } else {
-      None
-    }
 
   override def read(reader: JsonReader): Short = {
     reader.moveNext() match {

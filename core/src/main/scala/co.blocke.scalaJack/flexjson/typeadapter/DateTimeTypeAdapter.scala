@@ -9,7 +9,7 @@ object DateTimeTypeAdapter extends TypeAdapterFactory {
 
   override def apply(tpe: Type, context: Context) =
     if (tpe =:= typeOf[DateTime]) {
-      Some(new DateTimeTypeAdapter(context.adaptorOf[String]))
+      Some(DateTimeTypeAdapter(context.adaptorOf[String]))
     } else {
       None
     }

@@ -35,6 +35,7 @@ trait ScalaJack[S] {
 
 object ScalaJack extends ViewSplice {
 	def apply(): ScalaJack[String] = new FlexJsonFlavor().makeScalaJack
+//	def apply(): ScalaJack[String] = JsonFlavor().makeScalaJack
 	def apply[R]( flavor:FlavorKind[R] ) = flavor.makeScalaJack
 }
 

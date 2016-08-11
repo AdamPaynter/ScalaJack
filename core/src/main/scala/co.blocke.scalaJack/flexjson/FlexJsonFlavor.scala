@@ -1,13 +1,11 @@
 package co.blocke.scalajack.flexjson
 
-import co.blocke.scalajack.flexjson.typeadapter.{AnyValTypeAdapter, BooleanTypeAdapter, ByteTypeAdapter, CaseClassTypeAdapter, CharTypeAdapter, DateTimeTypeAdapter, DoubleTypeAdapter, FloatTypeAdapter, IntTypeAdapter, JavaByteTypeAdapter, JavaDoubleTypeAdapter, JavaFloatTypeAdapter, JavaIntegerTypeAdapter, JavaLongTypeAdapter, JavaShortTypeAdapter, ListTypeAdapter, LongTypeAdapter, MapTypeAdapter, OptionTypeAdapter, SetTypeAdapter, ShortTypeAdapter, StringTypeAdapter, TraitTypeAdapter, TraitTypeAdapterFactory, TryTypeAdapter, UUIDTypeAdapter}
 import co.blocke.scalajack.flexjson.handler.Logging
+import co.blocke.scalajack.flexjson.typeadapter.{AnyValTypeAdapter, BooleanTypeAdapter, ByteTypeAdapter, CaseClassTypeAdapter, CharTypeAdapter, DateTimeTypeAdapter, DoubleTypeAdapter, FloatTypeAdapter, IntTypeAdapter, JavaWrappedByteTypeAdapter, JavaWrappedDoubleTypeAdapter, JavaWrappedFloatTypeAdapter, JavaWrappedIntegerTypeAdapter, JavaWrappedLongTypeAdapter, JavaWrappedShortTypeAdapter, ListTypeAdapter, LongTypeAdapter, MapTypeAdapter, OptionTypeAdapter, SetTypeAdapter, ShortTypeAdapter, StringTypeAdapter, TraitTypeAdapterFactory, TryTypeAdapter, TypeHintBinding, UUIDTypeAdapter}
 import co.blocke.scalajack.{FlavorKind, JackFlavor, ScalaJack, VisitorContext}
-import org.joda.time.DateTime
 
-import scala.reflect.api.JavaUniverse
 import scala.reflect.runtime.currentMirror
-import scala.reflect.runtime.universe.{Type, TypeTag, typeOf}
+import scala.reflect.runtime.universe.{Type, TypeTag}
 
 class FlexJsonFlavor extends FlavorKind[String] {
 
@@ -32,31 +30,79 @@ class FlexJsonFlavor extends FlavorKind[String] {
 
         val context = new Context
 
-        val hintMap = vc.hintMap map {
-          case (traitTypeName, typeHintMemberName) =>
-            currentMirror.staticClass(traitTypeName) -> typeHintMemberName
+        type MemberName = String
+        type TypeHint = String
+
+        val typeHintMemberNamesByDeclaredType: Map[Type, MemberName] = vc.hintMap filter { _._1 != "default" } map {
+          case (traitTypeName, typeHintMemberName) ⇒ {
+            val traitType: Type = currentMirror.staticClass(traitTypeName).info
+            traitType → typeHintMemberName
+          }
         }
+
+        val defaultTypeHintMemberName: Option[MemberName] = vc.hintMap.get("default")
+
+        val typeHintToConcreteTypeMappingsByTraitType: Map[Type, TypeHint ⇒ Type] = vc.hintValueRead map {
+          case (traitTypeName, fn) ⇒
+            val traitType: Type = currentMirror.staticClass(traitTypeName).info.dealias
+            traitType → ((typeHint: TypeHint) ⇒ {
+              val concreteClassName = fn(typeHint)
+              currentMirror.staticClass(concreteClassName).info
+            })
+        }
+
+        val defaultTypeHintToConcreteTypeMapping: (TypeHint ⇒ Type) =
+          hint ⇒ currentMirror.staticClass(hint).info
+
+        val concreteTypeToTypeHintMappingsByTraitType: Map[Type, Type ⇒ TypeHint] = vc.hintValueRender map {
+          case (traitTypeName, fn) ⇒
+            val traitType: Type = currentMirror.staticClass(traitTypeName).info
+            traitType → ((concreteTypeName: Type) ⇒ fn(concreteTypeName.typeSymbol.asClass.name.encodedName.toString))
+        }
+
+        val defaultConcreteTypeToTypeHintMapping: (Type ⇒ TypeHint) =
+          tpe ⇒ tpe.typeSymbol.fullName
 
         context.registerFactory(UUIDTypeAdapter)
         context.registerFactory(CharTypeAdapter)
         context.registerFactory(ByteTypeAdapter)
-        context.registerFactory(JavaByteTypeAdapter)
+        context.registerFactory(JavaWrappedByteTypeAdapter)
         context.registerFactory(ShortTypeAdapter)
-        context.registerFactory(JavaShortTypeAdapter)
+        context.registerFactory(JavaWrappedShortTypeAdapter)
         context.registerFactory(IntTypeAdapter)
-        context.registerFactory(JavaIntegerTypeAdapter)
+        context.registerFactory(JavaWrappedIntegerTypeAdapter)
         context.registerFactory(LongTypeAdapter)
-        context.registerFactory(JavaLongTypeAdapter)
+        context.registerFactory(JavaWrappedLongTypeAdapter)
         context.registerFactory(FloatTypeAdapter)
-        context.registerFactory(JavaFloatTypeAdapter)
+        context.registerFactory(JavaWrappedFloatTypeAdapter)
         context.registerFactory(DoubleTypeAdapter)
-        context.registerFactory(JavaDoubleTypeAdapter)
+        context.registerFactory(JavaWrappedDoubleTypeAdapter)
         context.registerFactory(BooleanTypeAdapter)
         context.registerFactory(StringTypeAdapter)
         context.registerFactory(DateTimeTypeAdapter)
         context.registerFactory(AnyValTypeAdapter)
         context.registerFactory(CaseClassTypeAdapter)
-        context.registerFactory(TraitTypeAdapterFactory())
+        context.registerFactory(TraitTypeAdapterFactory({ (tpe: Type) ⇒
+          val memberName = typeHintMemberNamesByDeclaredType.get(tpe).orElse(defaultTypeHintMemberName)
+
+          println(vc)
+
+          val typeHintToConcreteTypeMapping: TypeHint ⇒ Type =
+            typeHintToConcreteTypeMappingsByTraitType.getOrElse(tpe, defaultTypeHintToConcreteTypeMapping)
+
+          val concreteTypeToTypeHintMapping: Type ⇒ TypeHint =
+            concreteTypeToTypeHintMappingsByTraitType.getOrElse(tpe, defaultConcreteTypeToTypeHintMapping)
+
+          (memberName.get, new TypeHintBinding {
+            override def hintToType(hint: String): Type = {
+              typeHintToConcreteTypeMapping(hint)
+            }
+
+            override def typeToHint(tpe: Type): String = {
+              concreteTypeToTypeHintMapping(tpe)
+            }
+          })
+        }))
         context.registerFactory(OptionTypeAdapter)
         context.registerFactory(TryTypeAdapter)
         context.registerFactory(ListTypeAdapter)

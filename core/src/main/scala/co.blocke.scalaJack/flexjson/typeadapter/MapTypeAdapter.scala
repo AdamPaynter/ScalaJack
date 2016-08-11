@@ -38,7 +38,7 @@ case class MapTypeAdapter[K, V](keyTypeAdapter: TypeAdapter[K],
       val key = keyTypeAdapter.read(reader)
       val value = valueTypeAdapter.read(reader)
 
-      map += key -> value
+      map += key → value
     }
 
     reader.endObject()

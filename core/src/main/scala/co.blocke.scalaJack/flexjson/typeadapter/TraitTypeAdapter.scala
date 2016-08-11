@@ -5,19 +5,19 @@ import co.blocke.scalajack.flexjson.{Context, JsonReader, JsonWriter, TypeAdapte
 import scala.reflect.runtime.universe.Type
 import scala.reflect.runtime.currentMirror
 
-case class TraitTypeAdapterFactory(typeHintMemberName: Type ⇒ (String, String ⇒ Type)) extends TypeAdapterFactory {
+case class TraitTypeAdapterFactory(typeHintMemberName: Type ⇒ (String, TypeHintBinding)) extends TypeAdapterFactory {
 
   override def apply(tpe: Type, context: Context) =
     if (tpe.typeSymbol.asClass.isTrait) {
-      val (memberName, actualTypeFn) = typeHintMemberName(tpe)
-      Some(TraitTypeAdapter[Any](tpe, memberName, actualTypeFn, context))
+      val (memberName, typeHintBinding) = typeHintMemberName(tpe)
+      Some(TraitTypeAdapter[Any](tpe, memberName, typeHintBinding, context))
     } else {
       None
     }
 
 }
 
-case class TraitTypeAdapter[T](traitType: Type, typeHintMemberName: String, actualTypeFn: (String ⇒ Type), context: Context) extends TypeAdapter[T] {
+case class TraitTypeAdapter[T](traitType: Type, typeHintMemberName: String, typeHintBinding: TypeHintBinding, context: Context) extends TypeAdapter[T] {
 
   override def read(reader: JsonReader): T = {
     var actualTypeHint: String = null
@@ -34,7 +34,7 @@ case class TraitTypeAdapter[T](traitType: Type, typeHintMemberName: String, actu
     }
     reader.resetPosition()
 
-    val actualType = actualTypeFn(actualTypeHint)
+    val actualType = typeHintBinding.hintToType(actualTypeHint)
     val actualAdapter = context.adapter(actualType)
 
     actualAdapter.read(reader).asInstanceOf[T]

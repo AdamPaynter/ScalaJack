@@ -4,6 +4,10 @@ import TokenType.TokenType
 
 trait JsonReader {
 
+  def position: Int = ???
+
+  def position_=(newPosition: Int): Unit = ???
+
   def nextTokenType: TokenType
 
   def moveNext(): TokenType
